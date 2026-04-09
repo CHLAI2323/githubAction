@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+# all the job will automatic run if branch above are both master 
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'adopt'
+        java-version: '17'
+
+    - name: Build with Gradle
+      run: gradle build 
+
+    # all file in build/libs/** will upload to my account 
+    # iknow all jar file will be in build/libs/**
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: build/libs/**
+
+  # run test and upload 
+    - name: Run Unit Test
+      run: gradle test
+
+    - name: Upload Test Reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-reports
+        path: build/reports/tests/**
+    
+    # JaCoCo test and upload 
+    - name: Generate code coverage report
+      run: gradle jacocoTestReport
+
+    - name: Upload code coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: code-coverage-report
+        path: build/reports/jacoco/test/html/**
+        
+    # 
+    - name: Run Deployment
+      run: java -jar build/libs/hello-world-java-V1.jar
